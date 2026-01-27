@@ -1,0 +1,6 @@
+/* Temporary fallback: directly import compiled Tailwind CSS from the package so styles appear immediately.
+	This bypasses the PostCSS build step and is intended only as a short-term workaround.
+	Later we should restore the @tailwind directives and fix the PostCSS/Vite integration. */
+
+@import "tailwindcss/index.css";
+
