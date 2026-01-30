@@ -41,61 +41,37 @@ def register():
 
 @auth_bp.route('/login', methods=['POST'])
 def login():
-    data = request.json
-    email = data['email']
-    password = data['password']
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({"status": "error", "message": "Invalid JSON"}), 400
+
+    email = data.get("email")
+    password = data.get("password")
+    if not email or not password:
+        return jsonify({"status": "error", "message": "Email and password required"}), 400
 
     cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     cursor.execute("SELECT * FROM REGISTRATION WHERE email = %s", (email,))
     user = cursor.fetchone()
     cursor.close()
 
-    try:
-        if not user:
-            return jsonify({"status": "error", "message": "Invalid email or password"}), 401
+    if not user:
+        return jsonify({"status": "error", "message": "Invalid email or password"}), 401
 
-        # Handle varying column name casing between environments
-        stored_hash = user.get('PASSWORD') or user.get('password')
-        if not stored_hash:
-            print("[AUTH] Missing password column in REGISTRATION row keys:", list(user.keys()))
-            return jsonify({"status": "error", "message": "Server configuration error: password column missing"}), 500
+    stored_hash = user.get('PASSWORD') or user.get('password')
+    if not stored_hash:
+        return jsonify({"status": "error", "message": "Password not set"}), 500
 
-        if not check_password_hash(stored_hash, password):
-            return jsonify({"status": "error", "message": "Invalid email or password"}), 401
+    if not check_password_hash(stored_hash, password):
+        return jsonify({"status": "error", "message": "Invalid email or password"}), 401
 
-        uid = user.get('ID') or user.get('id')
-        uname = user.get('NAME') or user.get('name')
-        uemail = user.get('EMAIL') or user.get('email')
-        uschool = user.get('SCHOOL') or user.get('school')
-        uskills = user.get('SKILLS') or user.get('skills')
-        uinterest = user.get('INTEREST') or user.get('interest')
+    session['user_id'] = user.get('ID') or user.get('id')
+    session['user_name'] = user.get('NAME') or user.get('name')
 
-        session['user_id'] = uid
-        session['user_name'] = uname
-
-        payload = {
-            "status": "success",
-            "message": "Login successful",
-            "user": {
-                "id": uid,
-                "name": uname,
-                "email": uemail,
-                "school": uschool,
-                "skills": uskills,
-                "interest": uinterest
-            }
-        }
-
-        try:
-            print("[AUTH] session after login:", dict(session))
-        except Exception:
-            print("[AUTH] session debug failed")
-
-        resp = make_response(jsonify(payload))
-        return resp
-    except Exception as e:
-        print("[AUTH] Login failed:", str(e))
-        return jsonify({"status": "error", "message": "Server error during login"}), 500
+    return jsonify({
+        "status": "success",
+        "message": "Login successful"
+    })
 
 
 @auth_bp.route('/status', methods=['GET'])
