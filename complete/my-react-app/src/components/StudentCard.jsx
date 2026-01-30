@@ -1,4 +1,4 @@
-// StudentCard.jsx (Simple Pastel Version)
+// StudentCard.jsx (Standard Display Style – Lilac Connect Button)
 import React from "react";
 import { motion } from "framer-motion";
 
@@ -19,36 +19,45 @@ export default function StudentCard({ student, onView, onConnect, connecting }) 
   return (
     <motion.div
       layout
-      whileHover={{ y: -4 }}
-      transition={{ type: "spring", stiffness: 150, damping: 18 }}
-      className="bg-white rounded-2xl p-4 shadow-sm border border-pink-100"
+      whileHover={{ y: -3 }}
+      transition={{ type: "spring", stiffness: 160, damping: 20 }}
+      className="bg-white rounded-xl p-4 border border-slate-200 hover:shadow-md transition"
     >
       <div className="flex items-start gap-4">
-        {/* Avatar Box */}
-        <div className="w-14 h-14 rounded-xl bg-pink-100 flex items-center justify-center text-lg font-semibold text-slate-800">
+        {/* Avatar */}
+        <div
+          className="w-12 h-12 rounded-lg bg-slate-100 flex items-center justify-center
+                     text-sm font-semibold text-slate-700 border border-slate-300"
+        >
           {initials}
         </div>
 
         {/* Info */}
-        <div className="flex-1">
-          <div className="font-semibold text-slate-800">{student.NAME}</div>
-          <div className="text-xs text-slate-500">{student.SCHOOL || "—"}</div>
+        <div className="flex-1 min-w-0">
+          <div className="font-semibold text-slate-900 truncate">
+            {student.NAME}
+          </div>
+          <div className="text-xs text-slate-500 truncate">
+            {student.SCHOOL || "—"}
+          </div>
 
+          {/* Common Skills */}
           {common.length > 0 && (
-            <div className="mt-2 text-xs text-green-700">
-              Match: {common.join(", ")}
+            <div className="mt-2 text-xs text-emerald-600">
+              Matches: {common.join(", ")}
             </div>
           )}
 
           {/* Skills */}
           <div className="mt-3 flex flex-wrap gap-2">
             {skills.length === 0 ? (
-              <span className="text-xs text-slate-400">No skills</span>
+              <span className="text-xs text-slate-400">No skills listed</span>
             ) : (
               skills.map((sk, i) => (
                 <span
                   key={i}
-                  className="px-3 py-1 bg-pink-50 border border-pink-100 text-pink-700 rounded-full text-xs"
+                  className="px-2.5 py-0.5 text-xs rounded-md
+                             bg-slate-100 border border-slate-200 text-slate-700"
                 >
                   {sk}
                 </span>
@@ -60,7 +69,9 @@ export default function StudentCard({ student, onView, onConnect, connecting }) 
           <div className="mt-4 flex items-center gap-3">
             <button
               onClick={() => onView(student.ID)}
-              className="px-3 py-1 rounded-md bg-white border border-slate-200 text-slate-700 text-sm"
+              className="px-3 py-1.5 rounded-md text-sm
+                         border border-slate-300 bg-white
+                         text-slate-700 hover:bg-slate-100 transition"
             >
               View
             </button>
@@ -68,13 +79,17 @@ export default function StudentCard({ student, onView, onConnect, connecting }) 
             <button
               onClick={() => onConnect(student.ID)}
               disabled={connecting || student.requested}
-              className={`px-3 py-1 rounded-md text-sm text-white shadow-sm ${
+              className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${
                 student.requested
-                  ? "bg-gray-300 cursor-not-allowed"
-                  : "bg-pink-400 hover:bg-pink-500"
+                  ? "bg-slate-300 text-white cursor-not-allowed"
+                  : "bg-violet-400 text-white hover:bg-violet-500"
               }`}
             >
-              {connecting ? "Sending..." : student.requested ? "Requested" : "Connect"}
+              {connecting
+                ? "Sending..."
+                : student.requested
+                ? "Requested"
+                : "Connect"}
             </button>
           </div>
         </div>
