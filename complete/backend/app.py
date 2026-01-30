@@ -25,15 +25,20 @@ app.permanent_session_lifetime = timedelta(days=7)
 
 # Allow local dev and deployed frontend origins
 frontend_origin = os.getenv("FRONTEND_ORIGIN", "https://peer-link-2.onrender.com")
+if is_render or is_prod_flag:
+    allowed_origins = [frontend_origin]
+else:
+    allowed_origins = [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        frontend_origin,
+    ]
+
 CORS(
     app,
     resources={
         r"/*": {
-            "origins": [
-                "http://localhost:5173",
-                "http://127.0.0.1:5173",
-                frontend_origin
-            ]
+            "origins": allowed_origins
         }
     },
     supports_credentials=True,
@@ -61,4 +66,6 @@ app.register_blueprint(groupchat_bp, url_prefix='/groupchat')
 app.register_blueprint(project_bp, url_prefix='/project')
 
 if __name__ == '__main__':
-    app.run(debug=True, host="localhost", port=5000)
+    port = int(os.getenv("PORT", 5000))
+    # Bind to all interfaces for broader compatibility
+    app.run(debug=True, host="0.0.0.0", port=port)

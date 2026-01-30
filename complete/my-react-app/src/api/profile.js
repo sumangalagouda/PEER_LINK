@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
+const API_BASE = import.meta.env.VITE_API_BASE || "https://peer-link-1.onrender.com";
 
 export async function fetchProfile(id) {
   const res = await fetch(`${API_BASE}/profile/view/${id}`, {
