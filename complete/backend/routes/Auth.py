@@ -29,7 +29,7 @@ def register():
 
 
     cursor.execute("""
-        INSERT INTO REGISTRATION (name, email, school, skills, interest, password)
+        INSERT INTO REGISTRATION (NAME, EMAIL, SCHOOL, SKILLS, INTEREST, PASSWORD)
         VALUES (%s, %s, %s, %s, %s, %s)
     """, (name, email, school, skills, interest, pass_hash))
 
@@ -50,36 +50,52 @@ def login():
     user = cursor.fetchone()
     cursor.close()
 
-    if user and check_password_hash(user['PASSWORD'], password):
+    try:
+        if not user:
+            return jsonify({"status": "error", "message": "Invalid email or password"}), 401
 
-        session['user_id'] = user['ID']
-        session['user_name'] = user['NAME']
+        # Handle varying column name casing between environments
+        stored_hash = user.get('PASSWORD') or user.get('password')
+        if not stored_hash:
+            print("[AUTH] Missing password column in REGISTRATION row keys:", list(user.keys()))
+            return jsonify({"status": "error", "message": "Server configuration error: password column missing"}), 500
 
-        # Build response explicitly so we can ensure Flask sets the session cookie
+        if not check_password_hash(stored_hash, password):
+            return jsonify({"status": "error", "message": "Invalid email or password"}), 401
+
+        uid = user.get('ID') or user.get('id')
+        uname = user.get('NAME') or user.get('name')
+        uemail = user.get('EMAIL') or user.get('email')
+        uschool = user.get('SCHOOL') or user.get('school')
+        uskills = user.get('SKILLS') or user.get('skills')
+        uinterest = user.get('INTEREST') or user.get('interest')
+
+        session['user_id'] = uid
+        session['user_name'] = uname
+
         payload = {
             "status": "success",
             "message": "Login successful",
             "user": {
-                "id": user["ID"],
-                "name": user["NAME"],
-                "email": user["EMAIL"],
-                "school": user["SCHOOL"],
-                "skills": user["SKILLS"],
-                "interest": user["INTEREST"]
+                "id": uid,
+                "name": uname,
+                "email": uemail,
+                "school": uschool,
+                "skills": uskills,
+                "interest": uinterest
             }
         }
 
-        # Debug: print session state to server logs
         try:
             print("[AUTH] session after login:", dict(session))
         except Exception:
             print("[AUTH] session debug failed")
 
         resp = make_response(jsonify(payload))
-        # return response — Flask should attach the session cookie automatically
         return resp
-    
-    return jsonify({"status": "error", "message": "Invalid email or password"}), 401
+    except Exception as e:
+        print("[AUTH] Login failed:", str(e))
+        return jsonify({"status": "error", "message": "Server error during login"}), 500
 
 
 @auth_bp.route('/status', methods=['GET'])
