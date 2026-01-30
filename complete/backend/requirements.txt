@@ -1,4 +1,6 @@
 Flask
 flask-mysqldb
+mysqlclient
 python-dotenv
 gunicorn
+flask-cors
