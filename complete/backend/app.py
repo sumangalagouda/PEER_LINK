@@ -7,21 +7,38 @@ import os
 
 load_dotenv()
 app = Flask(__name__)
-app.secret_key='supersecret'
+app.secret_key = os.getenv("FLASK_SECRET_KEY", "supersecret")
 
-app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
-app.config["SESSION_COOKIE_SECURE"] = False  
+# Configure cookies based on environment (prod requires cross-site over HTTPS)
+is_render = bool(os.getenv("RENDER") or os.getenv("RENDER_EXTERNAL_URL"))
+is_prod_flag = os.getenv("ENV") == "production"
+if is_render or is_prod_flag:
+    app.config["SESSION_COOKIE_SAMESITE"] = "None"
+    app.config["SESSION_COOKIE_SECURE"] = True
+else:
+    app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+    app.config["SESSION_COOKIE_SECURE"] = False
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 
 app.permanent_session_lifetime = timedelta(days=7)
 
 
-CORS(app,
-    resources={r"/*": {"origins": [
-        "http://localhost:5173",
-        "http://127.0.0.1:5173"
-    ]}},
-    supports_credentials=True
+# Allow local dev and deployed frontend origins
+frontend_origin = os.getenv("FRONTEND_ORIGIN", "https://peer-link-2.onrender.com")
+CORS(
+    app,
+    resources={
+        r"/*": {
+            "origins": [
+                "http://localhost:5173",
+                "http://127.0.0.1:5173",
+                frontend_origin
+            ]
+        }
+    },
+    supports_credentials=True,
+    methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization"]
 )
 
 
