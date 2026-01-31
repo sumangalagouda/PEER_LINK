@@ -43,60 +43,46 @@ def register():
 def login():
     data = request.get_json(silent=True)
     if not data:
-        return jsonify({"status": "error", "message": "Invalid JSON"}), 400
+        return jsonify({"message": "Invalid JSON"}), 400
 
     email = data.get("email")
     password = data.get("password")
     if not email or not password:
-        return jsonify({"status": "error", "message": "Email and password required"}), 400
+        return jsonify({"message": "Email and password required"}), 400
 
-    cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    cursor.execute("SELECT * FROM REGISTRATION WHERE email = %s", (email,))
-    user = cursor.fetchone()
-    cursor.close()
+    try:
+        conn = mysql.connection
+        cursor = conn.cursor(MySQLdb.cursors.DictCursor)
+        cursor.execute("SELECT * FROM REGISTRATION WHERE email = %s", (email,))
+        user = cursor.fetchone()
+        cursor.close()
+    except Exception as e:
+        print("[LOGIN DB ERROR]", e)
+        return jsonify({"message": "Database unavailable"}), 500
 
     if not user:
-        return jsonify({"status": "error", "message": "Invalid email or password"}), 401
+        return jsonify({"message": "Invalid email or password"}), 401
 
-    stored = user.get('PASSWORD') or user.get('password')
-    if stored is None:
-        # No password column present in row
-        return jsonify({"status": "error", "message": "Server configuration error: password column missing"}), 500
+    stored = user.get("PASSWORD") or user.get("password")
+    if not stored:
+        return jsonify({"message": "Password missing"}), 500
 
-    is_hashed = isinstance(stored, str) and stored.startswith('pbkdf2:')
-    ok = False
     try:
-        if is_hashed:
-            ok = check_password_hash(stored, password)
-        else:
-            # Legacy plaintext fallback (development/legacy data only)
-            ok = stored == password
-    except Exception:
-        ok = False
+        if not check_password_hash(stored, password):
+            return jsonify({"message": "Invalid email or password"}), 401
+    except Exception as e:
+        print("[HASH ERROR]", e)
+        return jsonify({"message": "Auth error"}), 500
 
-    if not ok:
-        return jsonify({"status": "error", "message": "Invalid email or password"}), 401
-
-    uid = user.get('ID') or user.get('id')
-    uname = user.get('NAME') or user.get('name')
-    uemail = user.get('EMAIL') or user.get('email')
-    uschool = user.get('SCHOOL') or user.get('school')
-    uskills = user.get('SKILLS') or user.get('skills')
-    uinterest = user.get('INTEREST') or user.get('interest')
-
-    session['user_id'] = uid
-    session['user_name'] = uname
+    session["user_id"] = user.get("ID") or user.get("id")
+    session["user_name"] = user.get("NAME") or user.get("name")
 
     return jsonify({
         "status": "success",
-        "message": "Login successful",
         "user": {
-            "id": uid,
-            "name": uname,
-            "email": uemail,
-            "school": uschool,
-            "skills": uskills,
-            "interest": uinterest
+            "id": session["user_id"],
+            "name": session["user_name"],
+            "email": user.get("EMAIL") or user.get("email")
         }
     })
 
