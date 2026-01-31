@@ -102,3 +102,12 @@ def status():
 def logout():
     session.clear()
     return jsonify({"status": "success", "message": "Logged out successfully"})
+
+@app.route("/db-test")
+def db_test():
+    try:
+        cur = mysql.connection.cursor()
+        cur.execute("SELECT 1")
+        return {"status": "DB CONNECTED"}
+    except Exception as e:
+        return {"error": str(e)}, 500
