@@ -58,19 +58,46 @@ def login():
     if not user:
         return jsonify({"status": "error", "message": "Invalid email or password"}), 401
 
-    stored_hash = user.get('PASSWORD') or user.get('password')
-    if not stored_hash:
-        return jsonify({"status": "error", "message": "Password not set"}), 500
+    stored = user.get('PASSWORD') or user.get('password')
+    if stored is None:
+        # No password column present in row
+        return jsonify({"status": "error", "message": "Server configuration error: password column missing"}), 500
 
-    if not check_password_hash(stored_hash, password):
+    is_hashed = isinstance(stored, str) and stored.startswith('pbkdf2:')
+    ok = False
+    try:
+        if is_hashed:
+            ok = check_password_hash(stored, password)
+        else:
+            # Legacy plaintext fallback (development/legacy data only)
+            ok = stored == password
+    except Exception:
+        ok = False
+
+    if not ok:
         return jsonify({"status": "error", "message": "Invalid email or password"}), 401
 
-    session['user_id'] = user.get('ID') or user.get('id')
-    session['user_name'] = user.get('NAME') or user.get('name')
+    uid = user.get('ID') or user.get('id')
+    uname = user.get('NAME') or user.get('name')
+    uemail = user.get('EMAIL') or user.get('email')
+    uschool = user.get('SCHOOL') or user.get('school')
+    uskills = user.get('SKILLS') or user.get('skills')
+    uinterest = user.get('INTEREST') or user.get('interest')
+
+    session['user_id'] = uid
+    session['user_name'] = uname
 
     return jsonify({
         "status": "success",
-        "message": "Login successful"
+        "message": "Login successful",
+        "user": {
+            "id": uid,
+            "name": uname,
+            "email": uemail,
+            "school": uschool,
+            "skills": uskills,
+            "interest": uinterest
+        }
     })
 
 
