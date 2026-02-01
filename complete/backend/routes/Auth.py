@@ -21,7 +21,7 @@ def register():
     pass_hash=generate_password_hash(password)
     cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     # Check if email already exists
-    cursor.execute("SELECT * FROM REGISTRATION WHERE email = %s", (email,))
+    cursor.execute("SELECT * FROM registration WHERE email = %s", (email,))
     existing_user = cursor.fetchone()
     if existing_user:
         
@@ -29,7 +29,7 @@ def register():
 
 
     cursor.execute("""
-        INSERT INTO REGISTRATION (NAME, EMAIL, SCHOOL, SKILLS, INTEREST, PASSWORD)
+        INSERT INTO registration (NAME, EMAIL, SCHOOL, SKILLS, INTEREST, PASSWORD)
         VALUES (%s, %s, %s, %s, %s, %s)
     """, (name, email, school, skills, interest, pass_hash))
 
@@ -53,7 +53,7 @@ def login():
     try:
         conn = mysql.connection
         cursor = conn.cursor(MySQLdb.cursors.DictCursor)
-        cursor.execute("SELECT * FROM REGISTRATION WHERE email = %s", (email,))
+        cursor.execute("SELECT * FROM registration WHERE email = %s", (email,))
         user = cursor.fetchone()
         cursor.close()
     except Exception as e:

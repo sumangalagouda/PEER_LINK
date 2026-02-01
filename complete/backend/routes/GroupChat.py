@@ -38,7 +38,7 @@ def send_group_message():
         image_url = f"/{filepath}"
 
     cursor.execute("""
-        INSERT INTO GROUP_MESSAGES (group_id, sender_id, message, image_url)
+        INSERT INTO group_messages (group_id, sender_id, message, image_url)
         VALUES (%s, %s, %s, %s)
     """, (group_id, sender_id, message, image_url))
 
@@ -56,7 +56,7 @@ def group_chat_history(group_id):
 
     cursor.execute("""
         SELECT sender_id, message, image_url, timestamp
-        FROM GROUP_MESSAGES
+        FROM group_messages
         WHERE group_id = %s
         ORDER BY timestamp ASC
     """, (group_id,))

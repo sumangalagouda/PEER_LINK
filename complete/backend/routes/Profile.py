@@ -8,7 +8,7 @@ profile_bp=Blueprint('profile',__name__)
 @profile_bp.route('/view/<int:id>', methods=['GET'])
 def profile_view(id):
     cursor=mysql.connection.cursor()
-    cursor.execute('SELECT ID,NAME,EMAIL,SCHOOL,SKILLS,INTEREST FROM REGISTRATION WHERE id=%s',(id,))
+    cursor.execute('SELECT ID,NAME,EMAIL,SCHOOL,SKILLS,INTEREST FROM registration WHERE id=%s',(id,))
     user=cursor.fetchone()
     cursor.close()
 
@@ -27,7 +27,7 @@ def profile_Edit(id):
     skills = data.get('skills')
     interest = data.get('interest')
     cursor=mysql.connection.cursor()
-    cursor.execute('UPDATE REGISTRATION SET name=%s, school=%s, skills=%s, interest=%s WHERE id=%s',(name,school,skills,interest,id))
+    cursor.execute('UPDATE registration SET name=%s, school=%s, skills=%s, interest=%s WHERE id=%s',(name,school,skills,interest,id))
 
     mysql.connection.commit()
     cursor.close()

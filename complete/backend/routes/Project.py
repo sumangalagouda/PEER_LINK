@@ -24,7 +24,7 @@ def create_project():
     try:
         cur = mysql.connection.cursor()
         sql = (
-            "INSERT INTO PROJECTS (title, description, mode, group_id, created_by) "
+            "INSERT INTO projects (title, description, mode, group_id, created_by) "
             "VALUES (%s, %s, %s, %s, %s)"
         )
         cur.execute(sql, (title, description, mode, group_id, created_by))
@@ -41,8 +41,8 @@ def create_project():
             'message': 'Failed to create project',
             'error': str(e),
             'hint': (
-                "Ensure PROJECTS table exists. Example:\n"
-                "CREATE TABLE PROJECTS (\n"
+                "Ensure projects table exists. Example:\n"
+                "CREATE TABLE projects (\n"
                 "  id INT AUTO_INCREMENT PRIMARY KEY,\n"
                 "  title VARCHAR(255) NOT NULL,\n"
                 "  description TEXT,\n"
@@ -50,8 +50,8 @@ def create_project():
                 "  group_id INT NULL,\n"
                 "  created_by INT NOT NULL,\n"
                 "  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,\n"
-                "  FOREIGN KEY (group_id) REFERENCES STDGROUP(id),\n"
-                "  FOREIGN KEY (created_by) REFERENCES REGISTRATION(ID)\n"
+                "  FOREIGN KEY (group_id) REFERENCES stdgroup(id),\n"
+                "  FOREIGN KEY (created_by) REFERENCES registration(ID)\n"
                 ")"
             )
         }), 500
@@ -76,7 +76,7 @@ def add_project_member():
         try:
             c.execute(
                 """
-                SELECT 1 FROM CONNECTIONS
+                SELECT 1 FROM connections
                 WHERE ((user_id=%s AND connected_user_id=%s) OR (user_id=%s AND connected_user_id=%s))
                   AND status='accepted'
                 LIMIT 1
@@ -88,7 +88,7 @@ def add_project_member():
             # Fallback without status column
             c.execute(
                 """
-                SELECT 1 FROM CONNECTIONS
+                SELECT 1 FROM connections
                 WHERE (user_id=%s AND connected_user_id=%s) OR (user_id=%s AND connected_user_id=%s)
                 LIMIT 1
                 """,
@@ -101,7 +101,7 @@ def add_project_member():
 
         # Add member (unique by project_id, user_id)
         sql = (
-            "INSERT INTO PROJECT_MEMBERS (project_id, user_id) VALUES (%s, %s)"
+            "INSERT INTO project_members (project_id, user_id) VALUES (%s, %s)"
         )
         c.execute(sql, (project_id, user_id))
         mysql.connection.commit()
@@ -116,16 +116,16 @@ def add_project_member():
             'message': 'Failed to add project member',
             'error': str(e),
             'hint': (
-                "Ensure PROJECT_MEMBERS exists. Example:\n"
-                "CREATE TABLE PROJECT_MEMBERS (\n"
+                "Ensure project_members exists. Example:\n"
+                "CREATE TABLE project_members (\n"
                 "  id INT AUTO_INCREMENT PRIMARY KEY,\n"
                 "  project_id INT NOT NULL,\n"
                 "  user_id INT NOT NULL,\n"
                 "  role VARCHAR(100),\n"
                 "  added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,\n"
                 "  UNIQUE KEY uniq_project_member (project_id, user_id),\n"
-                "  FOREIGN KEY (project_id) REFERENCES PROJECTS(id),\n"
-                "  FOREIGN KEY (user_id) REFERENCES REGISTRATION(ID)\n"
+                "  FOREIGN KEY (project_id) REFERENCES projects(id),\n"
+                "  FOREIGN KEY (user_id) REFERENCES registration(ID)\n"
                 ")"
             )
         }), 500

@@ -18,7 +18,7 @@ def create_group():
 
     # Create group
     cursor.execute("""
-        INSERT INTO STDGROUP (group_name, created_by)
+        INSERT INTO stdgroup (group_name, created_by)
         VALUES (%s, %s)
     """, (group_name, creator_id))
 
@@ -26,7 +26,7 @@ def create_group():
 
     # Add creator as member
     cursor.execute("""
-        INSERT INTO GROUP_MEMBERS (group_id, user_id)
+        INSERT INTO group_members (group_id, user_id)
         VALUES (%s, %s)
     """, (group_id, creator_id))
 
@@ -49,7 +49,7 @@ def add_member():
 
     # Check if already added
     cursor.execute("""
-        SELECT * FROM GROUP_MEMBERS WHERE group_id=%s AND user_id=%s
+        SELECT * FROM group_members WHERE group_id=%s AND user_id=%s
     """, (group_id, user_id))
 
     if cursor.fetchone():
@@ -60,7 +60,7 @@ def add_member():
         c2 = mysql.connection.cursor()
         c2.execute(
             """
-            SELECT 1 FROM CONNECTIONS
+            SELECT 1 FROM connections
             WHERE ((user_id=%s AND connected_user_id=%s) OR (user_id=%s AND connected_user_id=%s))
               AND status='accepted'
             LIMIT 1
@@ -78,7 +78,7 @@ def add_member():
             c3 = mysql.connection.cursor()
             c3.execute(
                 """
-                SELECT 1 FROM CONNECTIONS
+                SELECT 1 FROM connections
                 WHERE (user_id=%s AND connected_user_id=%s) OR (user_id=%s AND connected_user_id=%s)
                 LIMIT 1
                 """,
@@ -94,7 +94,7 @@ def add_member():
 
     # Add user to group
     cursor.execute("""
-        INSERT INTO GROUP_MEMBERS (group_id, user_id)
+        INSERT INTO group_members (group_id, user_id)
         VALUES (%s, %s)
     """, (group_id, user_id))
 
@@ -113,8 +113,8 @@ def get_my_groups():
 
     cursor.execute("""
         SELECT G.id, G.group_name, G.created_by, G.created_at
-        FROM STDGROUP G
-        JOIN GROUP_MEMBERS M ON G.id = M.group_id
+        FROM stdgroup G
+        JOIN group_members M ON G.id = M.group_id
         WHERE M.user_id = %s
     """, (user_id,))
 
@@ -134,15 +134,15 @@ def get_group_messages(group_id):
     cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
 
     # verify membership
-    cursor.execute("SELECT 1 FROM GROUP_MEMBERS WHERE group_id=%s AND user_id=%s", (group_id, user_id))
+    cursor.execute("SELECT 1 FROM group_members WHERE group_id=%s AND user_id=%s", (group_id, user_id))
     if not cursor.fetchone():
         cursor.close()
         return jsonify({'message': 'Not a member of this group'}), 403
 
-    # Inspect columns of GROUP_MESSAGES (do not mutate schema here)
+    # Inspect columns of group_messages (do not mutate schema here)
     try:
         c2 = mysql.connection.cursor()
-        c2.execute("SHOW COLUMNS FROM GROUP_MESSAGES")
+        c2.execute("SHOW COLUMNS FROM group_messages")
         cols = [row[0].lower() for row in c2.fetchall()]
         c2.close()
     except Exception as e:
@@ -150,7 +150,7 @@ def get_group_messages(group_id):
             c2.close()
         except Exception:
             pass
-        return jsonify({'message': 'GROUP_MESSAGES table not found or unreadable', 'error': str(e)}), 500
+        return jsonify({'message': 'group_messages table not found or unreadable', 'error': str(e)}), 500
 
     # Build select depending on available columns
     user_col = 'user_id'
@@ -159,7 +159,7 @@ def get_group_messages(group_id):
 
     try:
         c_chk = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        c_chk.execute("SHOW COLUMNS FROM GROUP_MESSAGES")
+        c_chk.execute("SHOW COLUMNS FROM group_messages")
         rows = c_chk.fetchall()
         existing = [r.get('Field', r.get('COLUMN_NAME', '')).lower() for r in rows if r]
         c_chk.close()
@@ -187,7 +187,7 @@ def get_group_messages(group_id):
     except Exception:
         created_col = 'id'
 
-    select_sql = f"SELECT M.id, M.group_id, M.{user_col} AS user_id, M.{msg_col} AS message, M.{created_col} AS created_at, U.NAME AS sender_name FROM GROUP_MESSAGES M JOIN REGISTRATION U ON M.{user_col} = U.ID WHERE M.group_id = %s ORDER BY M.{created_col} ASC"
+    select_sql = f"SELECT M.id, M.group_id, M.{user_col} AS user_id, M.{msg_col} AS message, M.{created_col} AS created_at, U.NAME AS sender_name FROM group_messages M JOIN registration U ON M.{user_col} = U.ID WHERE M.group_id = %s ORDER BY M.{created_col} ASC"
     try:
         cursor.execute(select_sql, (group_id,))
     except Exception as e:
@@ -225,7 +225,7 @@ def post_group_message():
     cursor = mysql.connection.cursor()
 
     # verify membership
-    cursor.execute("SELECT 1 FROM GROUP_MEMBERS WHERE group_id=%s AND user_id=%s", (group_id, user_id))
+    cursor.execute("SELECT 1 FROM group_members WHERE group_id=%s AND user_id=%s", (group_id, user_id))
     if not cursor.fetchone():
         cursor.close()
         return jsonify({'message': 'Not a member of this group'}), 403
@@ -233,7 +233,7 @@ def post_group_message():
     # determine actual column names and insert accordingly
     try:
         c_chk = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        c_chk.execute("SHOW COLUMNS FROM GROUP_MESSAGES")
+        c_chk.execute("SHOW COLUMNS FROM group_messages")
         rows = c_chk.fetchall()
         existing = [r.get('Field', r.get('COLUMN_NAME', '')).lower() for r in rows if r]
         c_chk.close()
@@ -255,10 +255,10 @@ def post_group_message():
 
     if not insert_user_col or not insert_msg_col:
         cursor.close()
-        return jsonify({'message': 'Database schema for GROUP_MESSAGES is incompatible. Requires either user_id/sender_id and message/msg columns.', 'columns_detected': existing}), 500
+        return jsonify({'message': 'Database schema for group_messages is incompatible. Requires either user_id/sender_id and message/msg columns.', 'columns_detected': existing}), 500
 
     try:
-        sql = f"INSERT INTO GROUP_MESSAGES (group_id, {insert_user_col}, {insert_msg_col}) VALUES (%s, %s, %s)"
+        sql = f"INSERT INTO group_messages (group_id, {insert_user_col}, {insert_msg_col}) VALUES (%s, %s, %s)"
         cursor.execute(sql, (group_id, user_id, message))
         mysql.connection.commit()
         msg_id = cursor.lastrowid
@@ -273,15 +273,15 @@ def post_group_message():
 
 @group_bp.route('/debug_columns', methods=['GET'])
 def debug_group_messages_columns():
-    """Development helper: return SHOW COLUMNS and SHOW CREATE TABLE for GROUP_MESSAGES."""
+    """Development helper: return SHOW COLUMNS and SHOW CREATE TABLE for group_messages."""
     if 'user_id' not in session:
         return jsonify({'message': 'Login required'}), 401
 
     try:
         c = mysql.connection.cursor()
-        c.execute('SHOW COLUMNS FROM GROUP_MESSAGES')
+        c.execute('SHOW COLUMNS FROM group_messages')
         cols = c.fetchall()
-        c.execute('SHOW CREATE TABLE GROUP_MESSAGES')
+        c.execute('SHOW CREATE TABLE group_messages')
         create = c.fetchall()
         c.close()
         return jsonify({'columns': cols, 'create': create}), 200
@@ -290,5 +290,5 @@ def debug_group_messages_columns():
             c.close()
         except Exception:
             pass
-        return jsonify({'message': 'Failed to inspect GROUP_MESSAGES', 'error': str(e)}), 500
+        return jsonify({'message': 'Failed to inspect group_messages', 'error': str(e)}), 500
 
